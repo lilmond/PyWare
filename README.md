@@ -1,5 +1,5 @@
 # PyWare
-Editable Python Malware.
+Pre-built editable Python malware.
 
 # Convert to EXE
 ```
